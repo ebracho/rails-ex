@@ -1,0 +1,102 @@
+{
+    "kind": "List",
+    "apiVersion": "v1",
+    "metadata": {},
+    "items": [
+        {
+            "apiVersion": "v1",
+            "kind": "ImageStream",
+            "metadata": {
+                "annotations": {
+                    "description": "Keeps track of changes in the application image"
+                },
+                "labels": {
+                    "app": "rails-postgresql-example",
+                    "template": "rpg-build"
+                },
+                "name": "rails-postgresql-example"
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "ImageStream",
+            "metadata": {
+                "annotations": {
+                    "description": "Official ruby repo."
+                },
+                "labels": {
+                    "app": "rails-postgresql-example",
+                    "template": "rpg-build"
+                },
+                "name": "ruby"
+            },
+            "spec": {
+                "dockerImageRepository": "docker.io/library/ruby"
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "BuildConfig",
+            "metadata": {
+                "annotations": {
+                    "description": "Defines how to build the application",
+                    "template.alpha.openshift.io/wait-for-ready": "true"
+                },
+                "labels": {
+                    "app": "rails-postgresql-example",
+                    "template": "rpg-build"
+                },
+                "name": "rails-postgresql-example"
+            },
+            "spec": {
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "rails-postgresql-example:latest"
+                    }
+                },
+                "postCommit": {
+                    "script": "bundle exec rake test"
+                },
+                "source": {
+                    "contextDir": "",
+                    "git": {
+                        "ref": "",
+                        "uri": "https://github.com/ebracho/rails-ex.git"
+                    },
+                    "type": "Git"
+                },
+                "strategy": {
+                    "sourceStrategy": {
+                        "env": [
+                            {
+                                "name": "RUBYGEM_MIRROR",
+                                "value": ""
+                            }
+                        ],
+                        "from": {
+                            "kind": "ImageStreamTag",
+                            "name": "ruby:2.3",
+                            "namespace": "rpg-build"
+                        }
+                    },
+                    "type": "Source"
+                },
+                "triggers": [
+                    {
+                        "type": "ImageChange"
+                    },
+                    {
+                        "type": "ConfigChange"
+                    },
+                    {
+                        "github": {
+                            "secret": "insecure-secret"
+                        },
+                        "type": "GitHub"
+                    }
+                ]
+            }
+        }
+    ]
+}
